@@ -90,17 +90,52 @@ chart_data = pd.DataFrame(data_filtered)
 col1.subheader('Food group composition in your optimal diet *(gm/day)*')
 # col1.bar_chart(chart_data)
 
+# fig, ax = plt.subplots(figsize=(10, 6))
+# fig.patch.set_facecolor('black')  # Change figure background
+# ax.set_facecolor('black')  # Change plot background
+# # Plot stacked bars: each food group will have two bars (Value 1 and Value 2 stacked)
+# ax.bar(data_group['Food Group'], data_group[' Baseline'], label='Baseline diet', color='cyan')
+# ax.bar(data_group['Food Group'], data_group['Optimal_diet'], bottom=data_group[' Baseline'], label='Optimal diet', color='red')
+# # Adding labels and title
+# ax.set_xlabel('Food Group')
+# ax.set_ylabel('Consumption (gm/day)')
+# ax.set_title('Optimal Diet Composition of Food Groups')
+# ax.legend()
+# # Change text and tick colors to white for better visibility
+# ax.spines['bottom'].set_color('white')
+# ax.spines['left'].set_color('white')
+# ax.xaxis.label.set_color('white')
+# ax.yaxis.label.set_color('white')
+# ax.tick_params(axis='x', colors='white')
+# ax.tick_params(axis='y', colors='white')
+
+# Sample data (replace with your actual data)
+food_groups = data_group['Food Group']
+baseline_values = data_group[' Baseline']
+optimal_values = data_group['Optimal_diet']
+
+# Define bar width and positions
+x = np.arange(len(food_groups))  # Numeric positions for each food group
+width = 0.4  # Width of the bars
+
 fig, ax = plt.subplots(figsize=(10, 6))
 fig.patch.set_facecolor('black')  # Change figure background
 ax.set_facecolor('black')  # Change plot background
-# Plot stacked bars: each food group will have two bars (Value 1 and Value 2 stacked)
-ax.bar(data_group['Food Group'], data_group[' Baseline'], label='Baseline diet', color='cyan')
-ax.bar(data_group['Food Group'], data_group['Optimal_diet'], bottom=data_group[' Baseline'], label='Optimal diet', color='red')
-# Adding labels and title
+
+# Plot side-by-side bars
+ax.bar(x - width/2, baseline_values, width, label='Baseline diet', color='cyan')
+ax.bar(x + width/2, optimal_values, width, label='Optimal diet', color='red')
+
+# Formatting the plot
 ax.set_xlabel('Food Group')
 ax.set_ylabel('Consumption (gm/day)')
 ax.set_title('Optimal Diet Composition of Food Groups')
 ax.legend()
+
+# Adjust x-axis labels
+ax.set_xticks(x)
+ax.set_xticklabels(food_groups, rotation=45, ha='right', color='white')
+
 # Change text and tick colors to white for better visibility
 ax.spines['bottom'].set_color('white')
 ax.spines['left'].set_color('white')
@@ -108,6 +143,12 @@ ax.xaxis.label.set_color('white')
 ax.yaxis.label.set_color('white')
 ax.tick_params(axis='x', colors='white')
 ax.tick_params(axis='y', colors='white')
+
+
+
+
+
+
 
 # Display the plot in Streamlit
 col1.pyplot(fig)
