@@ -64,7 +64,7 @@ daly_in = st.sidebar.slider('Reduce DALYs by (%)', min_value=0, max_value=50, st
 # meat_con = st.sidebar.number_input('What is your Daily average Meat consumption ? *(gm/day)*',step=1,value=40)
 # pulse_con = st.sidebar.number_input('What is your Daily average Pulse consumption ? *(gm/day)*',step=1,value=10)
 
-os.chdir('C:\\Users\\says\\Projects\\DROSH\\app')
+#os.chdir('C:\\Users\\says\\Projects\\DROSH\\app')
 data = pd.read_csv("./app_data.csv")
 
 data_filtered = data[(data['CF'] ==  cf_in/100 ) & (data['DALY']== daly_in/100 )]
