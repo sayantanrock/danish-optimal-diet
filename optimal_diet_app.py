@@ -76,9 +76,6 @@ st.dataframe(data_filtered)
 st.write("Optimal Diet Suggestions for each food group:")
 st.dataframe(data_group)
 
-#data[(data['CF'] == 0.0 ) & (data['DALY']== 0.0 )].reset_index()
-
-#X = {'Colorectal Cancer': [0, consumption_meat_subset.groupby(['sex'], sort=True)['delta_daly_crc'].mean().values[0]*-1, 0], 'Ischemic Heart Disease': [consumption_pulses_subset.groupby(['sex'], sort=True)['delta_daly_ihd'].mean().values[0]*-1, 0,0 ],   'Type-2 Diabetes': [0, 0, consumption_meat_subset.groupby(['sex'], sort=True)['delta_daly_t2d'].mean().values[0]*-1 ]}
 
 chart_data = pd.DataFrame(data_filtered)
 
@@ -140,18 +137,8 @@ ax.yaxis.label.set_color('white')
 ax.tick_params(axis='x', colors='white')
 ax.tick_params(axis='y', colors='white')
 
-
-
-
-
-
-
 # Display the plot in Streamlit
 col1.pyplot(fig)
-
-#st.write('You consume',np.round(pulse_con/consumption_pulses_subset.total.mean() , 2) ,'times pulses of the average consumption in the age group of', age-2 ,'to', age+2 )
-#st.write('You consume',np.round(meat_con/consumption_meat_subset.total.mean(),2 ) ,'times meat of the average consumption in the age group of', age-2 ,'to', age+2 )
-
 
 
 
