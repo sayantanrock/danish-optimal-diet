@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 ######################### INITIAL DATA MANIPULATION FOR APP READY DATASET########################
 
 
-# df = pd.read_excel("C:\\Users\\says\\Projects\\DROSH\\app\\data.xlsx")  # Assuming it's stored in CSV format
+# df = pd.read_excel("C:\\Users\\says\\OneDrive - Danmarks Tekniske Universitet\\Dokumenter\\drosh\\App\\data.xlsx")  # Assuming it's stored in CSV format
 # # Reshape the table
 # df_long = df.melt(id_vars=["Food group", "Group", " Baseline"], var_name="CF_DALY", value_name="Value")
 # # Split the CF and DALY information into separate columns
@@ -59,11 +59,6 @@ daly_in = st.sidebar.slider('Reduce DALYs by (%)', min_value=0, max_value=50, st
 #st.sidebar.write(f'Selected reduction in DALY: {daly_in} %')
 
 
-
-#sex1 = st.sidebar.selectbox('Sex',('Male', 'Female'))
-# meat_con = st.sidebar.number_input('What is your Daily average Meat consumption ? *(gm/day)*',step=1,value=40)
-# pulse_con = st.sidebar.number_input('What is your Daily average Pulse consumption ? *(gm/day)*',step=1,value=10)
-
 #os.chdir('C:\\Users\\says\\Projects\\DROSH\\app')
 data = pd.read_csv("./app_data.csv")
 
@@ -71,7 +66,8 @@ data_filtered = data[(data['CF'] ==  cf_in/100 ) & (data['DALY']== daly_in/100 )
 data_filtered.drop(columns=["CF", "DALY", 'Unnamed: 0'], inplace=True)
 data_filtered.rename(columns={"Value": "Optimal_diet"}, inplace=True)
 
-data_group = data_filtered.groupby(['Group'], sort=True)[' Baseline','Optimal_diet'].sum()
+data_group = data_filtered.groupby(['Group'], sort=True)[[' Baseline','Optimal_diet']].sum()
+data_group.drop(0, inplace = True)
 data_group['Food Group'] = ['WHOLE GRAIN', 'DAIRY', 'FISH', 'FRUIT', 'VEGETABLE', 'MEAT', 'NUTS', 'LEGUMES']
 
 st.write("Optimal Diet Suggestions based on your inputs:")
