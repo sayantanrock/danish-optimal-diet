@@ -1,144 +1,182 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Mar 19 14:16:33 2025
+Created on Thu May 15 15:47:38 2025
 
 @author: says
 """
 
-#import streamlit as st
 import pandas as pd
 import numpy as np
 import streamlit as st
-#import os
 import matplotlib.pyplot as plt
+import pandas as pd
+import altair as alt
 
 
-######################### INITIAL DATA MANIPULATION FOR APP READY DATASET########################
-
-
-# df = pd.read_excel("C:\\Users\\says\\OneDrive - Danmarks Tekniske Universitet\\Dokumenter\\drosh\\App\\data.xlsx")  # Assuming it's stored in CSV format
-# # Reshape the table
-# df_long = df.melt(id_vars=["Food group", "Group", " Baseline"], var_name="CF_DALY", value_name="Value")
-# # Split the CF and DALY information into separate columns
-# df_long[['CF1','CF', 'DALY1', 'DALY']] = df_long['CF_DALY'].str.extract(r'(\w+)\s(\d+%)\s*,\s*(\w+)\s(\d+%)')
-# df_long.drop(columns=["CF1" , "DALY1"], inplace=True)
-# # Drop unnecessary column
-# df_long.drop(columns=["CF_DALY"], inplace=True)
-# # Convert percentages to numeric (if needed)
-# df_long['CF'] = df_long['CF'].str.rstrip('%').astype(float) / 100
-# df_long['DALY'] = df_long['DALY'].str.rstrip('%').astype(float) / 100
-# df_long.to_excel("app_data.xlsx")
-# df_long.to_csv("app_data.csv")
-
-
-##################################################################################################
-
-
-
-
-multi = '''
-Eat smart, live long, and save the planet—one bite at a time! The perfect diet isn’t just about fueling your body; it’s about nourishing the world around you. Imagine a plate packed with vibrant veggies, hearty grains, and planet-friendly proteins—good for your health, great for the Earth, and designed to keep diet-related diseases at bay. With the right balance, you can lower your carbon footprint, maximize nutrition, and add healthy years to your life. Ready to eat for a better you and a better world? Let’s dig in!
-'''
 col1, col2 = st.columns([3, 1])
 col1.subheader('National Food Institute')
 col1.write('**Research** **Group** **for** **Risk-Benefit**')
 col1.title('How does your optimal diet looks like ?')
 col2.image('DTU.png', width=50)
 
-col2.subheader('What is an optimal diet ? ')
-col2.image('DALYs.webp')
-col2.markdown(multi)
-#col2.image('DALY1.webp')
-#Create and name sidebar
-#st.image('DALY1.webp')
 st.sidebar.image('DALY1.webp')
 st.sidebar.header('Choose your category')
 cf_in = st.sidebar.slider('Reduce Carbon footprint by (%)', min_value=0, max_value=50, step = 25)
-#st.sidebar.write(f'Selected reduction in Carbon footprint: {cf_in} %')
 daly_in = st.sidebar.slider('Reduce DALYs by (%)', min_value=0, max_value=50, step = 25)
-#st.sidebar.write(f'Selected reduction in DALY: {daly_in} %')
 
 
-#os.chdir('C:\\Users\\says\\Projects\\DROSH\\app')
-data = pd.read_csv("./app_data.csv")
-
-data_filtered = data[(data['CF'] ==  cf_in/100 ) & (data['DALY']== daly_in/100 )]
-data_filtered.drop(columns=["CF", "DALY", 'Unnamed: 0'], inplace=True)
-data_filtered.rename(columns={"Value": "Optimal_diet"}, inplace=True)
-
-data_group = data_filtered.groupby(['Group'], sort=True)[[' Baseline','Optimal_diet']].sum()
+######################### INITIAL DATA MANIPULATION FOR APP READY DATASET########################
+df = pd.read_excel("./data.xlsx")
+daly = pd.read_excel("./data.xlsx", sheet_name='DALY', header = 0)
+slack = pd.read_excel("./data.xlsx", sheet_name='SLACK', header = 0)
+#############################################################################################
+##################Reshape the OPTIMAL DIET table############################################
+df_long = df.melt(id_vars=["Food group", "Group", " Baseline"], var_name="CF_DALY", value_name="Value")
+df_long[['CF1','CF', 'DALY1', 'DALY']] = df_long['CF_DALY'].str.extract(r'(\w+)\s(\d+%)\s*,\s*(\w+)\s(\d+%)')
+df_long.drop(columns=["CF1" , "DALY1"], inplace=True)
+df_long.drop(columns=["CF_DALY"], inplace=True)
+df_long['CF'] = df_long['CF'].str.rstrip('%').astype(float) / 100
+df_long['DALY'] = df_long['DALY'].str.rstrip('%').astype(float) / 100
+############## DATA PREPROCESSING FOR FOOD GROUP CHART ##########################################
+data_filtered = df_long[(df_long['CF'] ==  cf_in/100 ) & (df_long['DALY']== daly_in/100 )]
+data_filtered.drop(columns=["CF", "DALY"], inplace=True)
+data_filtered.rename(columns={"Value": "Optimal diet"}, inplace=True)
+data_group = data_filtered.groupby(['Group'], sort=True)[[' Baseline','Optimal diet']].sum()
 data_group.drop(0, inplace = True)
 data_group['Food Group'] = ['WHOLE GRAIN', 'DAIRY', 'FISH', 'FRUIT', 'VEGETABLE', 'MEAT', 'NUTS', 'LEGUMES']
+data_group.columns = data_group.columns.str.strip()
+data_group = data_group[['Food Group', 'Baseline', 'Optimal diet']]
+data_melted = data_group.melt(id_vars='Food Group', 
+                        value_vars=['Baseline', 'Optimal diet'], 
+                        var_name='Diet Type', 
+                        value_name='Consumption')
+chart_foodgroup = alt.Chart(data_melted).mark_bar().encode(
+    y=alt.Y('Food Group:N', title='Food Group'),
+    x=alt.X('Consumption:Q', title='Consumption (g/day)'),
+    color=alt.Color('Diet Type:N', title='Diet Type',scale=alt.Scale(scheme='set1')),
+    yOffset='Diet Type:N'  # Optional: or use x='Variable:N' for grouped bars
+).properties(width=600, height=600)
+##################################################################################################
+########################  Reshape the DALY table ##################################################
+##################################################################################################
+daly_long = daly.melt(id_vars=["DISEASES", "BASELINE"], var_name="CF_DALY", value_name="Value")
+daly_long[['CF1','CF', 'DALY1', 'DALY']] = daly_long['CF_DALY'].str.extract(r'(\w+)\s(\d+%)\s*,\s*(\w+)\s(\d+%)')
+daly_long.drop(columns=["CF1" , "DALY1"], inplace=True)
+daly_long.drop(columns=["CF_DALY"], inplace=True)
+daly_long['CF'] = daly_long['CF'].str.rstrip('%').astype(float) / 100
+daly_long['DALY'] = daly_long['DALY'].str.rstrip('%').astype(float) / 100
+################### DATA PREPROCESSING FOR DALY CHART ###########################################
+daly_filtered = daly_long[(daly_long['CF'] ==  cf_in/100 ) & (daly_long['DALY']== daly_in/100 )]
+daly_filtered.drop(columns=["CF", "DALY"], inplace=True)
+daly_filtered.rename(columns={"Value": "OPTIMAL"}, inplace=True)
+daly_long_melted = daly_filtered.melt(id_vars='DISEASES', 
+                        value_vars=['BASELINE', 'OPTIMAL'], 
+                        var_name='Diet Type', 
+                        value_name='Burden')
+chart_daly = alt.Chart(daly_long_melted).mark_bar().encode(
+    x=alt.X('DISEASES:N', title='Health Outcome'),
+    y=alt.Y('Burden:Q', title='DALY/100k'),
+    color=alt.Color('Diet Type:N', title='Diet Type',scale=alt.Scale(scheme='set2')),
+    xOffset='Diet Type:N'  # Optional: or use x='Variable:N' for grouped bars
+).properties(width=600, height=400)
+#############################################################################################
+##################Reshape the SLACK table############################################
+slack_long = slack.melt(id_vars=["Nutrient", "Baseline"], var_name="CF_DALY", value_name="Value")
+slack_long[['CF1','CF', 'DALY1', 'DALY']] = slack_long['CF_DALY'].str.extract(r'(\w+)\s(\d+%)\s*,\s*(\w+)\s(\d+%)')
+slack_long.drop(columns=["CF1" , "DALY1"], inplace=True)
+slack_long.drop(columns=["CF_DALY"], inplace=True)
+slack_long['CF'] = slack_long['CF'].str.rstrip('%').astype(float) / 100
+slack_long['DALY'] = slack_long['DALY'].str.rstrip('%').astype(float) / 100
+############## DATA PREPROCESSING FOR SLACK CHART ##########################################
+slack_filtered = slack_long[(slack_long['CF'] ==  cf_in/100 ) & (slack_long['DALY']== daly_in/100 )]
+slack_filtered.drop(columns=["CF", "DALY"], inplace=True)
+slack_filtered.rename(columns={"Value": "Optimal diet"}, inplace=True)
+########################## DIVIDE SLACK DATA IN TO TWO PARTS ################################
+############# ONE FOR PER GRAMS  #########################
+slack_g = slack_filtered.iloc[[0,1,2,3,9,10,12]]
+slack_mg = slack_filtered.iloc[[15,16,18,20]]
+slack_mineral_high = slack_filtered.iloc[[4,19,22,23,24,25]]
+slack_mineral_low = slack_filtered.iloc[[14,17,21,26,27,28,29]]
+slack_g_melted = slack_g.melt(id_vars='Nutrient', 
+                        value_vars=['Baseline', 'Optimal diet'], 
+                        var_name='Diet Type', 
+                        value_name='Consumption')
+slack_mg_melted = slack_mg.melt(id_vars='Nutrient', 
+                        value_vars=['Baseline', 'Optimal diet'], 
+                        var_name='Diet Type', 
+                        value_name='Consumption')
+slack_mineral_high_melted = slack_mineral_high.melt(id_vars='Nutrient', 
+                        value_vars=['Baseline', 'Optimal diet'], 
+                        var_name='Diet Type', 
+                        value_name='Consumption')
+slack_mineral_low_melted = slack_mineral_low.melt(id_vars='Nutrient', 
+                        value_vars=['Baseline', 'Optimal diet'], 
+                        var_name='Diet Type', 
+                        value_name='Consumption')
+# slack_melted = slack_filtered.melt(id_vars='Nutrient', 
+#                         value_vars=['Baseline', 'Optimal diet'], 
+#                         var_name='Diet Type', 
+#                         value_name='Consumption')
 
-st.write("Optimal Diet Suggestions based on your inputs:")
-st.dataframe(data_filtered)
+chart_slack_g_melted= alt.Chart(slack_g_melted).mark_bar().encode(
+    x=alt.X('Nutrient:N', title='Nutrient'),
+    y=alt.Y('Consumption:Q', title='Consumption (g/day)'),
+    color=alt.Color('Diet Type:N', title='Diet Type',scale=alt.Scale(scheme='set3')),
+    xOffset='Diet Type:N'  # Optional: or use x='Variable:N' for grouped bars
+).properties(width=600, height=300)
+chart_slack_mg_melted= alt.Chart(slack_mg_melted).mark_bar().encode(
+    x=alt.X('Nutrient:N', title='Nutrient'),
+    y=alt.Y('Consumption:Q', title='Consumption (mg/day)'),
+    color=alt.Color('Diet Type:N', title='Diet Type',scale=alt.Scale(scheme='dark2')),
+    xOffset='Diet Type:N'  # Optional: or use x='Variable:N' for grouped bars
+).properties(width=600, height=300)
+chart_slack_mineral_high_melted= alt.Chart(slack_mineral_high_melted).mark_bar().encode(
+    x=alt.X('Nutrient:N', title='Nutrient'),
+    y=alt.Y('Consumption:Q', title='Consumption (mg/day)'),
+    color=alt.Color('Diet Type:N', title='Diet Type',scale=alt.Scale(scheme='pastel1')),
+    xOffset='Diet Type:N'  # Optional: or use x='Variable:N' for grouped bars
+).properties(width=600, height=300)
+chart_slack_mineral_low_melted= alt.Chart(slack_mineral_low_melted).mark_bar().encode(
+    x=alt.X('Nutrient:N', title='Nutrient'),
+    y=alt.Y('Consumption:Q', title='Consumption (mg/day)'),
+    color=alt.Color('Diet Type:N', title='Diet Type',scale=alt.Scale(scheme='accent')),
+    xOffset='Diet Type:N'  # Optional: or use x='Variable:N' for grouped bars
+).properties(width=600, height=300)
 
-st.write("Optimal Diet Suggestions for each food group:")
-st.dataframe(data_group)
+
+###########################################################################################################
+#################### STYLING THE TABLE FOR BETTER VISUAL EFFECTS ##########################################
+###########################################################################################################
+styled_data_group = data_group.style.format({
+    'Baseline': "{:.1f}",
+    'Optimal_diet': "{:.1f}"
+}).highlight_max(subset=['Baseline', 'Optimal diet'], axis=1, color='lightgreen')
 
 
-chart_data = pd.DataFrame(data_filtered)
 
-#chart_data = chart_data.transpose()
-col1.subheader('Food group composition in your optimal diet *(gm/day)*')
-# col1.bar_chart(chart_data)
 
-# fig, ax = plt.subplots(figsize=(10, 6))
-# fig.patch.set_facecolor('black')  # Change figure background
-# ax.set_facecolor('black')  # Change plot background
-# # Plot stacked bars: each food group will have two bars (Value 1 and Value 2 stacked)
-# ax.bar(data_group['Food Group'], data_group[' Baseline'], label='Baseline diet', color='cyan')
-# ax.bar(data_group['Food Group'], data_group['Optimal_diet'], bottom=data_group[' Baseline'], label='Optimal diet', color='red')
-# # Adding labels and title
-# ax.set_xlabel('Food Group')
-# ax.set_ylabel('Consumption (gm/day)')
-# ax.set_title('Optimal Diet Composition of Food Groups')
-# ax.legend()
-# # Change text and tick colors to white for better visibility
-# ax.spines['bottom'].set_color('white')
-# ax.spines['left'].set_color('white')
-# ax.xaxis.label.set_color('white')
-# ax.yaxis.label.set_color('white')
-# ax.tick_params(axis='x', colors='white')
-# ax.tick_params(axis='y', colors='white')
 
-# Sample data (replace with your actual data)
-food_groups = data_group['Food Group']
-baseline_values = data_group[' Baseline']
-optimal_values = data_group['Optimal_diet']
 
-# Define bar width and positions
-x = np.arange(len(food_groups))  # Numeric positions for each food group
-width = 0.4  # Width of the bars
 
-fig, ax = plt.subplots(figsize=(10, 6))
-fig.patch.set_facecolor('black')  # Change figure background
-ax.set_facecolor('black')  # Change plot background
 
-# Plot side-by-side bars
-ax.bar(x - width/2, baseline_values, width, label='Baseline diet', color='cyan')
-ax.bar(x + width/2, optimal_values, width, label='Optimal diet', color='red')
+col1.subheader('Food group composition in your optimal Diet')
+col1.altair_chart(chart_foodgroup, use_container_width=True)
+col1.subheader("Optimal Diet Suggestions for each food group(g/day)")
+col1.table(styled_data_group)
+st.subheader('Burden of your optimal Diet (DALY/100k) ')
+st.altair_chart(chart_daly, use_container_width=True)
+st.subheader('Nutritional Composition of your optimal Diet ')
+st.altair_chart(chart_slack_g_melted, use_container_width=True)
+st.altair_chart(chart_slack_mg_melted, use_container_width=True)
+st.altair_chart(chart_slack_mineral_high_melted, use_container_width=True)
+st.altair_chart(chart_slack_mineral_low_melted, use_container_width=True)
+st.subheader("Optimal Diet Suggestions for all food items(g/day)")
+st.table(data_filtered)
 
-# Formatting the plot
-ax.set_xlabel('Food Group')
-ax.set_ylabel('Consumption (gm/day)')
-ax.set_title('Optimal Diet Composition of Food Groups')
-ax.legend()
 
-# Adjust x-axis labels
-ax.set_xticks(x)
-ax.set_xticklabels(food_groups, rotation=45, ha='right', color='white')
 
-# Change text and tick colors to white for better visibility
-ax.spines['bottom'].set_color('white')
-ax.spines['left'].set_color('white')
-ax.xaxis.label.set_color('white')
-ax.yaxis.label.set_color('white')
-ax.tick_params(axis='x', colors='white')
-ax.tick_params(axis='y', colors='white')
 
-# Display the plot in Streamlit
-col1.pyplot(fig)
+
 
 
 
